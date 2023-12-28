@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AbaAba-AI</title>
+    <link rel="stylesheet" href="{[ url_for('static', filename='styles.css') ]}">
+</head>
+<body>
+    <div id="app">
+        <div id="sidebar" v-if="flase">
+            <h2>Users List</h2>
+            <ul>
+                <li v-for="user in users" :key="user">{{ user }}</li>
+            </ul>
+        </div>
+
+        <div id="chat-container">
+            <div id="chat-header">AbaAba-AI Chat</div>
+            <div id="chat-messages">
+                <div class="message" v-for="(message, index) in messages" :key="index" :class="{ 'you': message.type === 'you', 'other': message.type === 'other' }">
+                    <span class="user">{{ message.user }}:</span>
+                    <div class="content">{{ message.content }}</div>
+                </div>
+            </div>
+            <input v-model="currentMessage" @keyup.enter="sendMessage" type="text" id="message-input" placeholder="Type your message...">
+            <button @click="sendMessage" id="send-button">Send</button>
+        </div>
+    </div>
+
+    <script src="{[ url_for('static', filename='vue.global.js') ]}"></script>
+    <script src="{[ url_for('static', filename='socket.io.min.js') ]}"></script>
+    <script>
+        const app = Vue.createApp({
+            data() {
+                return {
+                    users: ['User 1', 'User 2'], 
+                    messages: [],
+                    currentMessage: '',
+                    partialMessage:'',
+                };
+            },
+            mounted() {
+                const socket = io.connect('http://' + document.domain + ':' + location.port);
+
+                socket.on('message', (data) => {
+                    if(this.partialMessage!=''){
+                        this.messages.pop();
+                    }
+                    this.partialMessage += data;
+
+                    this.messages.push({ type: 'other', user: 'Server', content: this.partialMessage });
+
+                    const endOfMessageIndex = this.partialMessage.indexOf('\n\n');
+                    if (endOfMessageIndex !== -1) {
+                        this.partialMessage = '';
+                        this.scrollToBottom();
+                    }
+                });
+            },
+            methods: {
+                sendMessage() {
+                    const message = this.currentMessage.trim();
+                    if (message !== '') {
+                        this.messages.push({ type: 'you', user: 'You', content: message });
+
+                        this.currentMessage = '';
+                        this.partialMessage = '';
+                        this.scrollToBottom();
+
+                        const socket = io.connect('http://' + document.domain + ':' + location.port);
+                        socket.emit('message', this.messages);
+                        console.log(this.messages)
+                    }
+                },
+                scrollToBottom() {
+                    const messagesContainer = document.getElementById('chat-messages');
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                },
+            },
+        });
+
+        app.mount('#app');
+    </script>
+</body>
+</html>
