@@ -8,7 +8,7 @@
 </head>
 <body>
     <div id="app">
-        <div id="sidebar" v-if="flase">
+        <div id="sidebar" v-if="false">
             <h2>Users List</h2>
             <ul>
                 <li v-for="user in users" :key="user">{{ user }}</li>
@@ -23,6 +23,7 @@
                     <div class="content">{{ message.content }}</div>
                 </div>
             </div>
+            <button @click="stopReply" v-if="showStopButton" id="stop-button">Stop</button>
             <input v-model="currentMessage" @keyup.enter="sendMessage" type="text" id="message-input" placeholder="Type your message...">
             <button @click="sendMessage" id="send-button">Send</button>
         </div>
@@ -38,6 +39,7 @@
                     messages: [],
                     currentMessage: '',
                     partialMessage:'',
+                    showStopButton: false,
                 };
             },
             mounted() {
@@ -48,18 +50,25 @@
                         this.messages.pop();
                     }
                     this.partialMessage += data;
-
                     this.messages.push({ type: 'other', user: 'Server', content: this.partialMessage });
 
                     const endOfMessageIndex = this.partialMessage.indexOf('\n\n');
                     if (endOfMessageIndex !== -1) {
                         this.partialMessage = '';
                         this.scrollToBottom();
+                        this.stopReply();
+                    }
+                });
+                socket.on('terminate', (data) => {
+                    if(data=='True' || data==true){
+                        this.partialMessage = '';
+                        this.showStopButton = false;
                     }
                 });
             },
             methods: {
                 sendMessage() {
+                    this.showStopButton = true;
                     const message = this.currentMessage.trim();
                     if (message !== '') {
                         this.messages.push({ type: 'you', user: 'You', content: message });
@@ -76,6 +85,11 @@
                 scrollToBottom() {
                     const messagesContainer = document.getElementById('chat-messages');
                     messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                },
+                stopReply() {
+                    const socket = io.connect('http://' + document.domain + ':' + location.port);
+                    this.showStopButton = false;
+                    socket.emit('terminate',true);
                 },
             },
         });
