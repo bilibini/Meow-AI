@@ -17,3 +17,7 @@
 ## 演示效果
 该演示环境为CPU+4G运行内存，使用'rwkv-4-world-430m'模型
 ![image](https://picshack.net/ib/JmNDSYUKX6.gif)
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=bilibini/AbaAba-AI&type=Date)](https://star-history.com/#bilibini/AbaAba-AI&Date)
