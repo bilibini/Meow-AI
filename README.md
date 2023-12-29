@@ -10,7 +10,7 @@
 最高不限（最高可运行14b的大模型，聊天质量和效果更加好）  
 
 ## 运行设置
-根据自己电脑配置在模型网站（https://huggingface.co/RWKV）下载合适的模型  
+根据自己电脑配置在模型网站（[https://huggingface.co/RWKV](https://huggingface.co/RWKV)）下载合适的模型 
 下载的所有文件放在model文件夹内，并修改main.py第12行代码，将'rwkv-4-world-430m'修改为自己下载的模型文件夹  
 运行main.py，在浏览器中打开http://172.0.0.1:5000 即可开始对话  
 
