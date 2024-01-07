@@ -70,6 +70,27 @@ body {
     overflow-y: scroll;
 }
 
+.status-button{
+    display: flex;
+    flex-direction: row-reverse;
+    position: relative;
+}
+
+.status-button button{
+    border-color: transparent;
+    color: #fff;
+    background-color: #4caf50;
+    max-width: 65px;
+    max-height: 65px;
+    min-width: 40px;
+    min-height: 40px;
+    padding: 5px;
+    border-radius: 10px;
+    position: absolute;
+    top: -57px;
+    right: 25px;
+}
+
 .message {
     margin-bottom: 15px;
     display: flex;

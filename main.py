@@ -21,6 +21,7 @@ app = Flask(__name__)
 app.jinja_env.variable_start_string = '{['
 app.jinja_env.variable_end_string = ']}'
 socketio = SocketIO(app)
+terminate=False
 
 @app.route('/')
 def index():
@@ -28,6 +29,8 @@ def index():
 
 @socketio.on('message')
 def handle_message(message):
+    global terminate
+    terminate=False
     messages=message
     prompt = ''
     if len(messages)>1:
@@ -38,19 +41,29 @@ def handle_message(message):
     else:
         prompt = generate_prompt(messages[0]['content'])
 
-
+    print(prompt)
     inputs = tokenizer(prompt, return_tensors="pt")
     promptnew=prompt
     while True:
+        if terminate:
+            socketio.emit('terminate', True)
+            return
         output = model.generate(inputs["input_ids"], max_new_tokens=1, do_sample=True, temperature=1.0, top_p=0.3, top_k=0, )
         inputs=tokenizer.decode(output[0].tolist(), skip_special_tokens=True)
         words=inputs.replace(promptnew,'')
         promptnew=inputs
         print(promptnew.replace(prompt,''))
-        if promptnew.replace(prompt,'').count('\n\n')>0 or words=='':
+        if promptnew.replace(prompt,'').count('\n\n')>0 or words=='' or terminate:
+            socketio.emit('terminate', True)
             return
         socketio.emit('message', words)
         inputs = tokenizer(promptnew, return_tensors="pt")
+
+@socketio.on('terminate')
+def handle_terminate(message):
+    global terminate
+    terminate=True
+    print('接收到停止命令',terminate,message)
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)

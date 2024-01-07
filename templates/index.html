@@ -4,11 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AbaAba-AI</title>
-    <link rel="stylesheet" href="{[ url_for('static', filename='styles.css') ]}">
+    <link rel="stylesheet" href="{[ url_for('static', filename='css/styles.css') ]}">
+    <link rel="stylesheet" href="{[ url_for('static', filename='css/font-awesome.min.css') ]}">
+    <!-- <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet"> -->
 </head>
 <body>
     <div id="app">
-        <div id="sidebar" v-if="flase">
+        <div id="sidebar" v-if="false">
             <h2>Users List</h2>
             <ul>
                 <li v-for="user in users" :key="user">{{ user }}</li>
@@ -23,13 +25,18 @@
                     <div class="content">{{ message.content }}</div>
                 </div>
             </div>
+
+            <div class="status-button">
+                <button @click="stopReply" class="" v-if="showStopButton" id="stop-button"><i class="fa fa-stop"></i></button>
+                <button @click="resetReply" class="" v-if="!showStopButton" id="reset-button"><i class="fa fa-refresh"></i></button>
+            </div>
             <input v-model="currentMessage" @keyup.enter="sendMessage" type="text" id="message-input" placeholder="Type your message...">
             <button @click="sendMessage" id="send-button">Send</button>
         </div>
     </div>
 
-    <script src="{[ url_for('static', filename='vue.global.js') ]}"></script>
-    <script src="{[ url_for('static', filename='socket.io.min.js') ]}"></script>
+    <script src="{[ url_for('static', filename='js/vue.global.js') ]}"></script>
+    <script src="{[ url_for('static', filename='js/socket.io.min.js') ]}"></script>
     <script>
         const app = Vue.createApp({
             data() {
@@ -38,6 +45,7 @@
                     messages: [],
                     currentMessage: '',
                     partialMessage:'',
+                    showStopButton: false,
                 };
             },
             mounted() {
@@ -48,18 +56,25 @@
                         this.messages.pop();
                     }
                     this.partialMessage += data;
-
                     this.messages.push({ type: 'other', user: 'Server', content: this.partialMessage });
 
                     const endOfMessageIndex = this.partialMessage.indexOf('\n\n');
                     if (endOfMessageIndex !== -1) {
                         this.partialMessage = '';
                         this.scrollToBottom();
+                        this.stopReply();
+                    }
+                });
+                socket.on('terminate', (data) => {
+                    if(data=='True' || data==true){
+                        this.partialMessage = '';
+                        this.showStopButton = false;
                     }
                 });
             },
             methods: {
                 sendMessage() {
+                    this.showStopButton = true;
                     const message = this.currentMessage.trim();
                     if (message !== '') {
                         this.messages.push({ type: 'you', user: 'You', content: message });
@@ -76,6 +91,18 @@
                 scrollToBottom() {
                     const messagesContainer = document.getElementById('chat-messages');
                     messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                },
+                stopReply() {
+                    const socket = io.connect('http://' + document.domain + ':' + location.port);
+                    this.showStopButton = false;
+                    socket.emit('terminate',true);
+                },
+                resetReply(){
+                    this.showStopButton = true;
+                    this.messages.pop();
+                    const socket = io.connect('http://' + document.domain + ':' + location.port);
+                    socket.emit('message', this.messages);
+                    console.log(this.messages)
                 },
             },
         });
