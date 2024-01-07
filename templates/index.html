@@ -25,7 +25,6 @@
                     <div class="content">{{ message.content }}</div>
                 </div>
             </div>
-
             <div class="status-button">
                 <button @click="stopReply" class="" v-if="showStopButton" id="stop-button"><i class="fa fa-stop"></i></button>
                 <button @click="resetReply" class="" v-if="!showStopButton" id="reset-button"><i class="fa fa-refresh"></i></button>
@@ -37,6 +36,7 @@
 
     <script src="{[ url_for('static', filename='js/vue.global.js') ]}"></script>
     <script src="{[ url_for('static', filename='js/socket.io.min.js') ]}"></script>
+
     <script>
         const app = Vue.createApp({
             data() {
