@@ -1,4 +1,4 @@
-body {
+body,* {
     margin: 0;
     padding: 0;
 }
@@ -96,6 +96,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
+    position: relative;
 }
 
 .message .user {
@@ -110,12 +111,91 @@ body {
 
 .message.you .content {
     background-color: #ffcc80;
+    /* background-color:transparent; */
 }
 
 .message.other .content {
     background-color: #7be383;
+    /* background-color:transparent; */
 }
 
+.context-menu {
+    /* display: none; */
+    position: absolute;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    z-index: 1;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.context-menu-item {
+    padding: 8px;
+    cursor: pointer;
+}
+.context-menu-item:hover{
+    background-color: #4caf50;
+    color: #fff;
+}
+.edit-mode {
+    /* border: 1px solid #ccc; */
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    position: relative;
+    width: 100%;
+    height: auto;
+}
+.edit-mode .edit-mode-btn{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    width: 100%;
+    height: auto;
+}
+.edit-mode .edit-mode-btn button{
+    align-items: center;
+    border-color: transparent;
+    border-radius: 0.5rem;
+    border-width: 1px;
+    display: inline-flex;
+    font-size: .875rem;
+    font-weight: 500;
+    line-height: 1.25rem;
+    padding: 0.5rem 0.75rem;
+    pointer-events: auto;
+    margin: 10px;
+}
+.edit-mode .edit-mode-btn .save{
+    background-color: rgba(16,163,127,1);
+    color: rgba(255,255,255,1);
+}
+.edit-mode .edit-mode-btn .cancel{
+    border-color: rgba(0,0,0,.1);
+}
+.edit-mode textarea{
+    padding: 10px;
+    border-radius: 10px;
+    background-color: #7be383;
+    font-family: auto;
+    font-size: 1rem;
+    resize: none;
+    outline: none;
+    display: inline-block;
+    overflow-y: hidden;
+    width: calc(100% - 20px);
+    border:none;
+    text-decoration: none;
+}
+.message.other .edit-mode textarea{
+    background-color: #7be383;
+}
+.message.you .edit-mode textarea{
+    background-color: #ffcc80;
+}
 #message-input {
     width: auto;
     padding: 10px;
@@ -135,7 +215,9 @@ body {
     border-top: 1px solid #ccc;
     border-radius: 0 0 8px 8px;
 }
-
+#send-button.disabled{
+    background-color: #ccc;
+}
 @media only screen and (max-width: 800px) {
     #app {
         flex-direction: column;

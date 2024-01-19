@@ -9,10 +9,15 @@ def generate_prompt(instruction, input=""):
     else:
         return f"""User: hi\n\nAssistant: Hi. I am your assistant and I will provide expert full response in full details. Please feel free to ask any question and I will always answer it.\n\nUser: {instruction}\n\nAssistant:"""
 
-output_folder=os.path.join(os.path.dirname(__file__),'model','rwkv-4-world-430m')
-model = AutoModelForCausalLM.from_pretrained(output_folder, trust_remote_code=True).to(torch.float32)
-tokenizer = AutoTokenizer.from_pretrained(output_folder, trust_remote_code=True)
+is_available=torch.cuda.is_available()
 
+output_folder=os.path.join(os.path.dirname(__file__),'model','rwkv-5-world-1b5')
+model =None
+if is_available:
+    model =AutoModelForCausalLM.from_pretrained(output_folder, trust_remote_code=True, torch_dtype=torch.float16).to(0)
+else :
+    model =AutoModelForCausalLM.from_pretrained(output_folder, trust_remote_code=True).to(torch.float32)
+tokenizer = AutoTokenizer.from_pretrained(output_folder, trust_remote_code=True)
 
 from flask import Flask, render_template
 from flask_socketio import SocketIO
@@ -29,7 +34,7 @@ def index():
 
 @socketio.on('message')
 def handle_message(message):
-    global terminate
+    global terminate,is_available,model
     terminate=False
     messages=message
     prompt = ''
@@ -42,7 +47,11 @@ def handle_message(message):
         prompt = generate_prompt(messages[0]['content'])
 
     print(prompt)
-    inputs = tokenizer(prompt, return_tensors="pt")
+    inputs = None
+    if is_available:
+        inputs = tokenizer(prompt, return_tensors="pt").to(0)
+    else:
+        inputs = tokenizer(prompt, return_tensors="pt")
     promptnew=prompt
     while True:
         if terminate:
@@ -57,7 +66,10 @@ def handle_message(message):
             socketio.emit('terminate', True)
             return
         socketio.emit('message', words)
-        inputs = tokenizer(promptnew, return_tensors="pt")
+        if is_available:
+            inputs = tokenizer(promptnew, return_tensors="pt").to(0)
+        else:
+            inputs = tokenizer(promptnew, return_tensors="pt")
 
 @socketio.on('terminate')
 def handle_terminate(message):

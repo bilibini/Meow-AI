@@ -17,26 +17,40 @@
             </ul>
         </div>
 
-        <div id="chat-container">
+        <div id="chat-container" @click="hideContextMenuFun">
             <div id="chat-header">AbaAba-AI Chat</div>
             <div id="chat-messages">
-                <div class="message" v-for="(message, index) in messages" :key="index" :class="{ 'you': message.type === 'you', 'other': message.type === 'other' }">
+                <div class="message" v-for="(message, index) in messages" :key="index" :class="{ 'you': message.type === 'you', 'other': message.type === 'other' }" >
                     <span class="user">{{ message.user }}:</span>
-                    <div class="content">{{ message.content }}</div>
+                    <div class="content" v-show="!message.editMode" @contextmenu.prevent="showContextMenuFun(index,$event)">
+                        <p v-for="(text, index) in cutParagraphs(message.content)" :key="index">{{text}}</p>
+                    </div>
+                    <div class="edit-mode" v-if="message.editMode">
+                        <textarea @input="autoResize($event)" @focus="autoResize($event)"  v-model="message.editedContent"></textarea>
+                        <div class="edit-mode-btn">
+                            <button class="save" @click="confirmEdit(index)">确认&保存</button>
+                            <button class="cancel" @click="cancelEdit(index)">取消</button>
+                        </div>
+                    </div>
+                    <div class="context-menu" v-show="showContextMenu && contextMenuIndex == index" :style="{ top: contextMenuPosition.y + 'px', left: contextMenuPosition.x + 'px' }">
+                        <div class="context-menu-item" @click="copyMessage(index)">复制</div>
+                        <div v-show="!showStopButton" class="context-menu-item" @click="editMessage(index,$event)">编辑</div>
+                        <div v-show="!showStopButton" class="context-menu-item" @click="deleteMessage(index)">删除</div>
+                    </div>
                 </div>
             </div>
+
             <div class="status-button">
-                <button @click="stopReply" class="" v-if="showStopButton" id="stop-button"><i class="fa fa-stop"></i></button>
-                <button @click="resetReply" class="" v-if="!showStopButton" id="reset-button"><i class="fa fa-refresh"></i></button>
+                <button @click="stopReply" class="" v-show="showStopButton" id="stop-button"><i class="fa fa-stop"></i></button>
+                <button @click="resetReply" class="" v-show="!showStopButton" id="reset-button"><i class="fa fa-refresh"></i></button>
             </div>
-            <input v-model="currentMessage" @keyup.enter="sendMessage" type="text" id="message-input" placeholder="Type your message...">
-            <button @click="sendMessage" id="send-button">Send</button>
+            <input v-model="currentMessage" :disabled="showStopButton" @keyup.enter="sendMessage" type="text" id="message-input" :placeholder="showStopButton?'等待回复中……':'请输入内容……'">
+            <button @click="sendMessage" id="send-button" :class="{ 'disabled': showStopButton}">Send</button>
         </div>
     </div>
 
     <script src="{[ url_for('static', filename='js/vue.global.js') ]}"></script>
     <script src="{[ url_for('static', filename='js/socket.io.min.js') ]}"></script>
-
     <script>
         const app = Vue.createApp({
             data() {
@@ -46,6 +60,9 @@
                     currentMessage: '',
                     partialMessage:'',
                     showStopButton: false,
+                    showContextMenu: false,
+                    contextMenuIndex: -1,
+                    contextMenuPosition: { x: 0, y: 0 },
                 };
             },
             mounted() {
@@ -56,7 +73,7 @@
                         this.messages.pop();
                     }
                     this.partialMessage += data;
-                    this.messages.push({ type: 'other', user: 'Server', content: this.partialMessage });
+                    this.messages.push({ type: 'other', user: 'Server', content: this.partialMessage , editMode: false, editedContent: ''});
 
                     const endOfMessageIndex = this.partialMessage.indexOf('\n\n');
                     if (endOfMessageIndex !== -1) {
@@ -74,10 +91,10 @@
             },
             methods: {
                 sendMessage() {
-                    this.showStopButton = true;
                     const message = this.currentMessage.trim();
-                    if (message !== '') {
-                        this.messages.push({ type: 'you', user: 'You', content: message });
+                    if (message != '') {
+                        this.showStopButton = true;
+                        this.messages.push({ type: 'you', user: 'You', content: message , editMode: false, editedContent: ''});
 
                         this.currentMessage = '';
                         this.partialMessage = '';
@@ -93,17 +110,65 @@
                     messagesContainer.scrollTop = messagesContainer.scrollHeight;
                 },
                 stopReply() {
+                    //停止对话
                     const socket = io.connect('http://' + document.domain + ':' + location.port);
                     this.showStopButton = false;
                     socket.emit('terminate',true);
                 },
                 resetReply(){
+                    //重新对话
                     this.showStopButton = true;
                     this.messages.pop();
                     const socket = io.connect('http://' + document.domain + ':' + location.port);
                     socket.emit('message', this.messages);
                     console.log(this.messages)
                 },
+                cutParagraphs(text){
+                    //切断落
+                    return text.split('\n')
+                },
+                showContextMenuFun(index,event) {
+                    // 显示菜单
+                    this.showContextMenu = true;
+                    this.contextMenuIndex = index;
+                    this.contextMenuPosition = { x: event.offsetX+5, y: event.offsetY };
+                },
+                hideContextMenuFun(){
+                    // 隐藏菜单
+                    this.showContextMenu = false;
+                    this.contextMenuIndex = -1;
+                },
+                copyMessage(index) {
+                    // 复制消息
+                    this.showContextMenu = false;
+                    console.log(this.messages[index])
+                },
+                editMessage(index,event) {
+                    // 编辑消息
+                    this.messages[index].editMode = true;
+                    this.messages[index].editedContent = this.messages[index].content;
+                    // let edittextarea= event.target.parentNode.parentNode.querySelector(".edit-mode textarea");
+                    // console.log(event.target.parentNode.parentNode)
+                    // edittextarea.style.height = (edittextarea.scrollHeight-20) + "px";
+                },
+                deleteMessage(index) {
+                    // 删除消息
+                    console.log(this.messages[index].content.split('\n'))
+                },
+                confirmEdit(index) {
+                    // 确认编辑
+                    this.messages[index].content = this.messages[index].editedContent;
+                    this.messages[index].editMode = false;
+                },
+                cancelEdit(index) {
+                    // 取消编辑
+                    this.messages[index].editMode = false;
+                },
+                autoResize(event){
+                    //更新编辑框高度
+                    console.log(event.target.style.height,event.target.scrollHeight)
+                    event.target.style.height = (event.target.scrollHeight-20) + "px";
+                }
             },
         });
 
