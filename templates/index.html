@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,18 +10,12 @@
 </head>
 <body>
     <div id="app">
-        <div id="sidebar" v-if="false">
-            <h2>Users List</h2>
-            <ul>
-                <li v-for="user in users" :key="user">{{ user }}</li>
-            </ul>
-        </div>
-
         <div id="chat-container" @click="hideContextMenuFun">
-            <div id="chat-header">AbaAba-AI Chat</div>
+            <div id="chat-header">AbaAba-AI Chat<button @click="showMoreSetup=0" id="more-button"><i class="fa fa-bars"></i></button></div>
             <div id="chat-messages">
                 <div class="message" v-for="(message, index) in messages" :key="index" :class="{ 'you': message.type === 'you', 'other': message.type === 'other' }" >
-                    <span class="user">{{ message.user }}:</span>
+                    <span class="user">{{ users[message.type].name }}</span>
+                    <img class="avatar" :src="users[message.type].avatar" >
                     <div class="content" v-show="!message.editMode" @contextmenu.prevent="showContextMenuFun(index,$event)">
                         <p v-for="(text, index) in cutParagraphs(message.content)" :key="index">{{text}}</p>
                     </div>
@@ -47,6 +41,53 @@
             <input v-model="currentMessage" :disabled="showStopButton" @keyup.enter="sendMessage" type="text" id="message-input" :placeholder="showStopButton?'等待回复中……':'请输入内容……'">
             <button @click="sendMessage" id="send-button" :class="{ 'disabled': showStopButton}">Send</button>
         </div>
+        <div id="more-container" v-show="showMoreSetup!=-1"  @mouseup="isDragging = false">
+            <div class="bg" @click="showMoreSetup=-1"></div>
+            <div class="popup">
+                <div class="pop-more" v-show="showMoreSetup==0">
+                    <div class="btn user" @click="showMoreSetup=1"><i class="fa fa-user"></i>昵称</div>
+                    <div class="btn persona" @click="showMoreSetup=2"><i class="fa fa-child"></i>人设</div>
+                    <div class="btn download" @click="clickDownloadConfig"><i class="fa fa-download"></i>导出<a hidden ref="downloadConfig" href="">下载配置文件</a></div>
+                    <div class="btn upload"  @click="clickUploadConfig"><i class="fa fa-upload"></i>导入<input hidden type="file" ref="uploadConfig" @change="changeUploadConfig()" accept=".json"></div>
+                </div>
+                <div class="pop-user" v-show="showMoreSetup==1">
+                    <div class="user">
+                        <div class="avatar"><label>头像</label><img @click="clickAvatarBox('you')" :src="users.you.avatar" alt=""><input hidden type="file" ref="youAvatarToUpload" @change="changeAvatarFile('you')" accept="image/x-png,image/gif,image/jpeg,image/bmp"></div>
+                        <div class="name"><label>昵称</label><input class="input" v-model="users.you.name" type="text"></div>
+                    </div>
+                    <div class="user">
+                        <div class="avatar"><label>AI</label><img @click="clickAvatarBox('other')" :src="users.other.avatar" alt=""><input hidden type="file" ref="otherAvatarToUpload" @change="changeAvatarFile('other')" accept="image/x-png,image/gif,image/jpeg,image/bmp"></div>
+                        <div class="name"><label>AI</label><input class="input" v-model="users.other.name" type="text"></div>
+                    </div>
+                </div>
+                <div class="pop-persona" v-show="showMoreSetup==2">
+                    <div class="persona">
+                        <span class="user">{{ users.other.name }}</span>
+                        <img class="avatar" :src="users.other.avatar" >
+                        <textarea class="content" @input="autoResize($event)" @focus="autoResize($event)"  v-model="persona"></textarea>
+                    </div>
+                    <div class="coordinate">
+                        <div id="coordinate-bg">
+                            <div class="l">钻牛角尖</div>
+                            <div class="r">放飞自我</div>
+                            <div class="x"><span>严谨</span><span>活泼</span></div>
+                            <div class="y"><span>理性</span><span>感性</span></div>
+                        </div>
+                        <div id="coordinate-system" ref="coordinateSystem" @mousemove="mousemoveCoordinate($event)">
+                            <div id="draggable-point" ref="draggablePoint" @mousedown="isDragging = true" :style="{ top: coordinate.y + 'px', left: coordinate.x + 'px' }"></div>
+                        </div>
+                    </div>
+                    <div class="explain">
+                        <span><input type="checkbox" id="PC" v-model="coordinate.isPC" /><label for="PC">人格约束</label></span>
+                        <p class="mark">为了防止回复出现混乱情况发生，建议开启！</p>
+                        <p v-if="false">越偏向左边，回复越严谨，反之越活泼</p>
+                        <p v-if="false">越偏向上边，回复越理性，反之越感性</p>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
     </div>
 
     <script src="{[ url_for('static', filename='js/vue.global.js') ]}"></script>
@@ -55,25 +96,39 @@
         const app = Vue.createApp({
             data() {
                 return {
-                    users: ['User 1', 'User 2'], 
+                    users: {
+                        you:{
+                            name:'you',
+                            avatar:'/static/img/bilibini.png',
+                        },
+                        other:{
+                            name:'other',
+                            avatar:'/static/img/ai.png',
+                        }
+                    }, 
+                    coordinate:{x:25,y:35,isPC:true},
+                    persona:'你好，我是你的智能助理，我将提供专家般的全面回应，请随时提出任何问题，我将永远回答你。',
                     messages: [],
+                    //{type: 'you',content: '聊天内容',editMode: false,editedContent:'编辑内容'}
+                    socket:null,
                     currentMessage: '',
                     partialMessage:'',
+                    isDragging:false,
                     showStopButton: false,
                     showContextMenu: false,
+                    showMoreSetup: -1,
                     contextMenuIndex: -1,
                     contextMenuPosition: { x: 0, y: 0 },
                 };
             },
             mounted() {
-                const socket = io.connect('http://' + document.domain + ':' + location.port);
-
-                socket.on('message', (data) => {
+                this.socket= io.connect('http://' + document.domain + ':' + location.port);
+                this.socket.on('message', (data) => {
                     if(this.partialMessage!=''){
                         this.messages.pop();
                     }
                     this.partialMessage += data;
-                    this.messages.push({ type: 'other', user: 'Server', content: this.partialMessage , editMode: false, editedContent: ''});
+                    this.messages.push({ type: 'other', content: this.partialMessage , editMode: false, editedContent: ''});
 
                     const endOfMessageIndex = this.partialMessage.indexOf('\n\n');
                     if (endOfMessageIndex !== -1) {
@@ -82,27 +137,64 @@
                         this.stopReply();
                     }
                 });
-                socket.on('terminate', (data) => {
+                this.socket.on('terminate', (data) => {
                     if(data=='True' || data==true){
                         this.partialMessage = '';
                         this.showStopButton = false;
                     }
                 });
+
+                
+            },
+            computed:{
+                messagesInfo(){
+                    const messagesInfo={
+                        "messages":this.messages,
+                        "persona":this.persona,
+                        "characters":this.characters,
+                    };
+                    return messagesInfo;
+                },
+                characters(){
+                    let pizzazz=this.coordinate.x;//性格0.5 25
+                    let sense=this.coordinate.y;//认知0.7 35
+                    pizzazz=pizzazz==0?0.001:pizzazz;
+                    sense=sense==0?0.001:sense;
+                    if(this.coordinate.isPC){
+                        if (sense<=50){
+                            sense=(sense/100)*2;
+                            if(pizzazz<=50){
+                                pizzazz=(pizzazz/100)*2;
+                            }else{
+                                pizzazz=(((pizzazz-50)/50)*50);
+                            }
+                        }else{
+                            sense=(sense/100)*1.6;
+                            pizzazz=(pizzazz/100)*0.7;
+                        }
+                    }else{
+                        sense=(sense/100)*2;
+                        pizzazz=pizzazz<=50?(pizzazz/100)*2:((pizzazz-50)/50)*100;
+                    }
+                    sense=parseFloat(sense);
+                    pizzazz=parseFloat(pizzazz);
+                    console.log(this.coordinate.isPC,sense,pizzazz);
+                    return {sense,pizzazz};
+                },
             },
             methods: {
                 sendMessage() {
                     const message = this.currentMessage.trim();
                     if (message != '') {
                         this.showStopButton = true;
-                        this.messages.push({ type: 'you', user: 'You', content: message , editMode: false, editedContent: ''});
+                        this.messages.push({ type: 'you', content: message , editMode: false, editedContent: ''});
 
                         this.currentMessage = '';
                         this.partialMessage = '';
                         this.scrollToBottom();
 
-                        const socket = io.connect('http://' + document.domain + ':' + location.port);
-                        socket.emit('message', this.messages);
-                        console.log(this.messages)
+                        this.socket.emit('message', this.messagesInfo);
+                        console.log(this.messagesInfo)
                     }
                 },
                 scrollToBottom() {
@@ -111,17 +203,15 @@
                 },
                 stopReply() {
                     //停止对话
-                    const socket = io.connect('http://' + document.domain + ':' + location.port);
                     this.showStopButton = false;
-                    socket.emit('terminate',true);
+                    this.socket.emit('terminate',true);
                 },
                 resetReply(){
                     //重新对话
                     this.showStopButton = true;
                     this.messages.pop();
-                    const socket = io.connect('http://' + document.domain + ':' + location.port);
-                    socket.emit('message', this.messages);
-                    console.log(this.messages)
+                    this.socket.emit('message', this.messagesInfo);
+                    console.log(this.messagesInfo)
                 },
                 cutParagraphs(text){
                     //切断落
@@ -131,7 +221,7 @@
                     // 显示菜单
                     this.showContextMenu = true;
                     this.contextMenuIndex = index;
-                    this.contextMenuPosition = { x: event.offsetX+5, y: event.offsetY };
+                    this.contextMenuPosition = { x: event.offsetX+55, y: event.offsetY };
                 },
                 hideContextMenuFun(){
                     // 隐藏菜单
@@ -141,19 +231,16 @@
                 copyMessage(index) {
                     // 复制消息
                     this.showContextMenu = false;
-                    console.log(this.messages[index])
+                    navigator.clipboard.writeText(this.messages[index].content);
                 },
                 editMessage(index,event) {
                     // 编辑消息
                     this.messages[index].editMode = true;
                     this.messages[index].editedContent = this.messages[index].content;
-                    // let edittextarea= event.target.parentNode.parentNode.querySelector(".edit-mode textarea");
-                    // console.log(event.target.parentNode.parentNode)
-                    // edittextarea.style.height = (edittextarea.scrollHeight-20) + "px";
                 },
                 deleteMessage(index) {
                     // 删除消息
-                    console.log(this.messages[index].content.split('\n'))
+                    this.messages.splice(index,1);
                 },
                 confirmEdit(index) {
                     // 确认编辑
@@ -166,9 +253,85 @@
                 },
                 autoResize(event){
                     //更新编辑框高度
-                    console.log(event.target.style.height,event.target.scrollHeight)
                     event.target.style.height = (event.target.scrollHeight-20) + "px";
-                }
+                },
+                clickAvatarBox(typeAvatar){
+                    //更换头像
+                    if(typeAvatar=='you'){
+                        this.$refs.youAvatarToUpload.click();
+                    }else{
+                        this.$refs.otherAvatarToUpload.click();
+                    }
+                },
+                changeAvatarFile(typeAvatar){
+                    //上传头像
+                    let file=typeAvatar=='you'?this.$refs.youAvatarToUpload.files[0]:this.$refs.otherAvatarToUpload.files[0];
+                    let thisf=this;
+                    if (file && file instanceof Blob) {
+                        const reader = new FileReader();
+                        reader.onloadend = function() {
+                            const base64DataUrl = reader.result; // 获取到图片文件的Base64编码数据URL
+                            typeAvatar=='you'?thisf.users.you.avatar=base64DataUrl+window.btoa('abc'):thisf.users.other.avatar=base64DataUrl;
+                        };
+                        reader.readAsDataURL(file); // 开始读取图片文件并转换成Base64格式
+                    } else {
+                        console.error("无效的图片文件");
+                    }
+                },
+                clickDownloadConfig(){
+                    //下载配置
+                    let config={
+                        "persona":this.persona,
+                        "coordinate":this.coordinate,
+                        "characters":this.characters,
+                        "messages":this.messages,
+                        "users":this.users,
+                    }
+                    let file = new File([JSON.stringify(config)],'test.json',{ type: 'text/plain' });
+                    this.$refs.downloadConfig.download='test.json';
+                    this.$refs.downloadConfig.href = URL.createObjectURL(file);
+                    this.$refs.downloadConfig.click();
+                },
+                changeUploadConfig(){
+                    //上传配置
+                    let file=this.$refs.uploadConfig.files[0];
+                    let thisf=this;
+                    if (file && file instanceof Blob) {
+                        const reader = new FileReader();
+                        reader.onloadend = function() {
+                            let configData = reader.result; // 获取到配置文件内容
+                            configData=JSON.parse(configData);
+                            thisf.persona=configData.persona;
+                            thisf.coordinate=configData.coordinate;
+                            thisf.messages=configData.messages;
+                            thisf.users=configData.users;
+                            thisf.showMoreSetup=-1;
+                        };
+                        reader.readAsText(file); // 开始读取配置文件
+                    } else {
+                        console.error("无效的配置文件");
+                    }
+                },
+                clickUploadConfig(){
+                    this.$refs.uploadConfig.click();
+                },
+                mousemoveCoordinate(e){
+                    //拖动坐标
+                    const coordinateSystem=this.$refs.coordinateSystem;
+                    const draggablePoint=this.$refs.draggablePoint;
+                    if (this.isDragging) {
+                        const x = e.clientX - coordinateSystem.getBoundingClientRect().left-10;
+                        const y = e.clientY - coordinateSystem.getBoundingClientRect().top-10;
+                        const maxX = coordinateSystem.clientWidth - draggablePoint.clientWidth;
+                        const maxY = coordinateSystem.clientHeight - draggablePoint.clientHeight;
+                        const clampedX = Math.min(Math.max(0, x), maxX);
+                        const clampedY = Math.min(Math.max(0, y), maxY);
+
+                        this.coordinate.y=clampedY;
+                        this.coordinate.x=clampedX;
+                        // console.log(`X: ${clampedX}, Y: ${clampedY}`);
+                    }
+                },
             },
         });
 
