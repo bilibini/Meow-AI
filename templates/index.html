@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AbaAba-AI</title>
+    <title>Meow-AI</title>
     <link rel="stylesheet" href="{[ url_for('static', filename='css/styles.css') ]}">
     <link rel="stylesheet" href="{[ url_for('static', filename='css/font-awesome.min.css') ]}">
     <!-- <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet"> -->
@@ -11,7 +11,7 @@
 <body>
     <div id="app">
         <div id="chat-container" @click="hideContextMenuFun">
-            <div id="chat-header">AbaAba-AI Chat<button @click="showMoreSetup=0" id="more-button"><i class="fa fa-bars"></i></button></div>
+            <div id="chat-header">Meow-AI Chat<button @click="showMoreSetup=0" id="more-button"><i class="fa fa-bars"></i></button></div>
             <div id="chat-messages">
                 <div class="message" v-for="(message, index) in messages" :key="index" :class="{ 'you': message.type === 'you', 'other': message.type === 'other' }" >
                     <span class="user">{{ users[message.type].name }}</span>
@@ -56,8 +56,8 @@
                         <div class="name"><label>昵称</label><input class="input" v-model="users.you.name" type="text"></div>
                     </div>
                     <div class="user">
-                        <div class="avatar"><label>AI</label><img @click="clickAvatarBox('other')" :src="users.other.avatar" alt=""><input hidden type="file" ref="otherAvatarToUpload" @change="changeAvatarFile('other')" accept="image/x-png,image/gif,image/jpeg,image/bmp"></div>
-                        <div class="name"><label>AI</label><input class="input" v-model="users.other.name" type="text"></div>
+                        <div class="avatar"><label>MeowAI</label><img @click="clickAvatarBox('other')" :src="users.other.avatar" alt=""><input hidden type="file" ref="otherAvatarToUpload" @change="changeAvatarFile('other')" accept="image/x-png,image/gif,image/jpeg,image/bmp"></div>
+                        <div class="name"><label>MeowAI</label><input class="input" v-model="users.other.name" type="text"></div>
                     </div>
                 </div>
                 <div class="pop-persona" v-show="showMoreSetup==2">
@@ -87,7 +87,6 @@
                 </div>
             </div>
         </div>
-        
     </div>
 
     <script src="{[ url_for('static', filename='js/vue.global.js') ]}"></script>
@@ -102,7 +101,7 @@
                             avatar:'/static/img/bilibini.png',
                         },
                         other:{
-                            name:'other',
+                            name:'MeowAI',
                             avatar:'/static/img/ai.png',
                         }
                     }, 
@@ -176,8 +175,8 @@
                         sense=(sense/100)*2;
                         pizzazz=pizzazz<=50?(pizzazz/100)*2:((pizzazz-50)/50)*100;
                     }
-                    sense=parseFloat(sense);
-                    pizzazz=parseFloat(pizzazz);
+                    sense=parseFloat(sense)<0.01?0.01:parseFloat(sense);
+                    pizzazz=parseFloat(pizzazz)<0.01?0.01:parseFloat(pizzazz);
                     console.log(this.coordinate.isPC,sense,pizzazz);
                     return {sense,pizzazz};
                 },
