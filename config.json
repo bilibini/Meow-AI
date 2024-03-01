@@ -1,0 +1,9 @@
+{
+    "modelsFolder": "models",
+    "dataFolder": "data",
+    "configFolder": "config",
+    "outputFolder": "output",
+    "modelFile": "RWKV-x060-World-1B6-v2-20240208-ctx4096",
+    "configFile": "default.json",
+    "autoOpen": true
+}
