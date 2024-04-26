@@ -1,6 +1,8 @@
-import torch,os,json,webbrowser
 from rwkv.model import RWKV
-from rwkv.utils import PIPELINE, PIPELINE_ARGS
+from rwkv.utils import PIPELINE
+from server import MeowAIServer,Character,MeowAI
+from typing import List,Dict,Mapping,Union,Callable,Any
+import torch,os,json
 
 os.environ['RWKV_JIT_ON'] = '1'
 os.environ["RWKV_CUDA_ON"] = '0'
@@ -9,88 +11,35 @@ is_available='cuda fp16' if torch.cuda.is_available() else 'cpu fp32'
 config=None
 modelsFolder=""
 modelFile=""
-autoOpen=True
 
-with open(os.path.join(os.path.dirname(__file__),'config.json'),'r') as f:
-    config = json.load(f)
-modelsFolder=os.path.join(os.path.dirname(__file__),config["modelsFolder"]) if ":" not in config["modelsFolder"] else config["modelsFolder"]
-modelFile=os.path.join(modelsFolder,config["modelFile"])
-autoOpen=config["autoOpen"]
+def getModelsList(modelsFolder:str)->List[Dict[str,str]]:
+    modelInfoList=[]
+    for dirname, dirnames, filenames in os.walk(modelsFolder):
+        for filename in filenames:
+            if '.pth' in filename:
+                modelInfo={'name':filename.replace('.pth',''),'path':os.path.join(dirname, filename)}
+                modelInfoList.append(modelInfo)
+    return modelInfoList
+
+if not os.path.exists(os.path.join(os.path.dirname(__file__),'config.json')):raise FileNotFoundError(f"读取config.json失败,没有找到默认配置文件!\n请在项目根目录下创建config.json文件,并参照config.json.example文件填写配置项!\n配置文件路径:{os.path.join(os.path.dirname(__file__),'config.json')}")
+with open(os.path.join(os.path.dirname(__file__),'config.json'),'r') as f:config = json.load(f)
+modelsFolder=os.path.abspath(config['modelsFolder'])
+modelFile=os.path.join(modelsFolder,config['modelFile'])
+modelInfoList=getModelsList(modelsFolder)
+
+
+if not os.path.exists(modelFile+'.pth'):
+    print(f"模型文件不存在，请先下载{config['modelFile']}模型\n将自动使用{modelInfoList[0]['name']}模型")
+    modelFile=modelInfoList[0]['path']
+    config["modelFile"]=modelInfoList[0]['name']
 
 model = RWKV(model=modelFile, strategy=is_available)
 pipeline = PIPELINE(model, "rwkv_vocab_v20230424")
 
+meowAI=MeowAI(pipeline)
+meowAIServer=MeowAIServer(meowAI,host=config['host'],port=config['port'],autoOpen=config['autoOpen'])
 
-def generate_prompt(instruction, persona=""):
-    instruction = instruction.strip().replace('\r\n','\n').replace('\n\n','\n')
-    persona = persona.strip().replace('\r\n','\n').replace('\n\n','\n')
-    if persona:
-        return f"""User: 你是？\n\nAssistant: {persona}\n\nUser: {instruction}\n\nAssistant:"""
-    else:
-        return f"""User: hi\n\nAssistant: Hi. I am your assistant and I will provide expert full response in full details. Please feel free to ask any question and I will always answer it.\n\nUser: {instruction}\n\nAssistant:"""
-
-
-from flask import Flask, render_template
-from flask_socketio import SocketIO
-import socket
-app = Flask(__name__)
-app.jinja_env.variable_start_string = '{['
-app.jinja_env.variable_end_string = ']}'
-socketio = SocketIO(app)
-terminate=False
-promptnew=""
-
-@app.route('/')
-def index():
-    return render_template('index.html')
-
-@socketio.on('message')
-def handle_message(message):
-    global terminate,promptnew
-    promptnew=""
-    def emitCTX(ctx):
-        global terminate,promptnew
-        if terminate:
-            socketio.emit('terminate', True)
-            return True
-        promptnew=promptnew+ctx
-        if promptnew.count('\n\n')>0 or ctx=='' or terminate:
-            socketio.emit('terminate', True)
-            return True
-        socketio.emit('message', ctx)
-        print(ctx,end='')
-        return False
-        
-    terminate=False
-    messages=message['messages']
-    persona=message['persona']
-    characters=message['characters']
-    temperature=float(characters['sense'])
-    top_p=float(characters['pizzazz'])
-    prompt = ''
-    if len(messages)>1:
-        prompt+=f"""User: 你是？\n\nAssistant: {persona}\n\n"""
-        for mess in messages:
-            prompt+=f"""{'User' if mess['type']=='you' else 'Assistant'}: {mess['content']}\n\n"""
-        prompt+=f"""Assistant:"""
-    else:
-        prompt = generate_prompt(messages[0]['content'],persona)
-    args = PIPELINE_ARGS(temperature = temperature, top_p = top_p, top_k = 100,alpha_frequency = 0.25,alpha_presence = 0.25,alpha_decay = 0.996,token_ban = [0],token_stop = [],chunk_len = 256)
-    #top_p严谨->活泼 0->10 性格
-    # 更小的top_p → 更准确的答案，但会增加输出重复内容的概率
-    #temperature 理性->感性 0->2 认知
-    #改变模型输出分布的随机性，温度越高 → 输出随机性越大，文采斐然，但更容易偏题、脱轨
-    print(prompt,end="")
-    pipeline.generate(prompt, token_count=4096, args=args, callback=emitCTX)
-    print('\n')
-
-@socketio.on('terminate')
-def handle_terminate(message):
-    global terminate
-    terminate=True
-    print('接收到停止命令',terminate,message)
 
 if __name__ == '__main__':
-    if autoOpen:webbrowser.open('http://127.0.0.1:5000')
-    socketio.run(app, debug=True,use_reloader=False)
-    
+    meowAIServer.run()
+
