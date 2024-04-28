@@ -1,4 +1,4 @@
-import re,sys
+import re
 from tqdm import tqdm
 from rwkv.utils import PIPELINE, PIPELINE_ARGS
 from typing import List,Dict,Mapping,Union,Callable,Any
