@@ -1,4 +1,5 @@
-import re
+import re,sys
+from tqdm import tqdm
 from rwkv.utils import PIPELINE, PIPELINE_ARGS
 from typing import List,Dict,Mapping,Union,Callable,Any
 
@@ -23,18 +24,18 @@ class MeowAI:
     def chat(self,message:Mapping[str,Union[str,List[Dict[str,str]]]],prev_state:bool=False,callback:Callable[[str],Any]=None)->str:
         '''
         message={
-            "Answerer": "Answerer",
+            "Answerer": "Assistant",
             "messages": [
                 {
-                    "role": "user",
+                    "role": "User",
                     "content": "What is the meaning of life?"
                 },
                 {
-                    "role": "assistant",
+                    "role": "Assistant",
                     "content": "The meaning of life is to live a happy and fulfilling life."
                 },
                 {
-                    "role": "user",
+                    "role": "User",
                     "content": "How do cats call?"
                 },
             ]
@@ -46,19 +47,19 @@ class MeowAI:
         occurrence = {}
         state = self.chat_state if prev_state else None
         input_text = "\n\n".join([f"{text['role']}: {self.purr(text['content'])}" for text in message['messages']])
-        input_text = f"{message['Answerer']}: {self.purr(self.character.persona)}\n\n"+input_text+f"\n\n{message['Answerer']}: "
-        for i in range(self.max_tokens):
+        input_text = f"{message['Answerer']}: {self.purr(self.character.persona)}\n\n"+input_text+f"\n\n{message['Answerer']}:"
+        for i in tqdm(range(self.max_tokens),desc=f"tokens",leave=False):
+            if self.stop:break
             if i == 0:
-                out, state = self.model.forward(self.model.encode(input_text), state)
+                out, state = self.model.model.forward(self.model.encode(input_text), state)
             else:
-                out, state = self.model.forward([token], state)
+                out, state = self.model.model.forward([token], state)
             for n in occurrence:
                 out[n] -= (
-                    self.character.alpha_frequency + occurrence[n] * self.character.persona
+                    self.character.alpha_frequency + occurrence[n] * self.character.alpha_presence
                 )
 
             token = self.model.sample_logits(out, temperature=self.character.temperature, top_p=self.character.top_p)
-
             if token == 0:break
             out_tokens += [token]
 
@@ -69,12 +70,12 @@ class MeowAI:
             tmp = self.model.decode(out_tokens[out_len:])
             out_str += tmp
             self.prev_state=state
-            print(tmp, end="", flush=True)
-            if callback: callback(tmp)
             if ("\ufffd" not in tmp) and ( not tmp.endswith("\n") ):
                 out_len = i + 1
-            elif "\n\n" in tmp or self.stop:
+            elif "\n\n" in tmp:
                 break
+            if callback and not self.stop: callback(tmp)
+        print(out_str.strip())
         return out_str.strip()
     
     def talk(self,input_text:str,prev_state:bool=False,callback:Callable[[str],Any]=None)->str:
@@ -83,11 +84,11 @@ class MeowAI:
         out_str = ""
         occurrence = {}
         state = self.chat_state if prev_state else None
-        for i in range(self.max_tokens):
+        for i in tqdm(range(self.max_tokens),desc=f"tokens",leave=False):
             if i == 0:
-                out, state = self.model.forward(self.model.encode(input_text), state)
+                out, state = self.model.model.forward(self.model.encode(input_text), state)
             else:
-                out, state = self.model.forward([token], state)
+                out, state = self.model.model.forward([token], state)
             for n in occurrence:
                 out[n] -= (
                     self.character.alpha_frequency + occurrence[n] * self.character.persona
@@ -103,11 +104,10 @@ class MeowAI:
             tmp = self.model.decode(out_tokens[out_len:])
             out_str += tmp
             self.prev_state=state
-            print(tmp, end="", flush=True)
             if callback: callback(tmp)
             out_len = i + 1
-            if self.stop:
-                break
+            if self.stop:break
+        print(out_str)
         return out_str
     
 from flask import Flask, render_template
@@ -138,6 +138,11 @@ class MeowAIServer():
             self.socketio.emit('stop', status)
             self.meowAI.stop=status
 
+        @self.socketio.on('character')
+        def handle_character(character:Dict[str,Union[int,float]]):
+            self.meowAI.character = Character(**character)
+            print(character)
+            
         @self.socketio.on('chat')
         def handle_chat(message:Mapping[str,Union[str,List[Dict[str,str]]]]):
             self.meowAI.stop=False
@@ -149,6 +154,7 @@ class MeowAIServer():
             self.meowAI.stop=False
             self.meowAI.talk(prompt,False,lambda x:self.socketio.emit('talk',x))
             stop(True)
+
 
     def run(self):
         if self.autoOpen:webbrowser.open(f'http://{self.host}:{self.port}')

@@ -1,7 +1,7 @@
 ########################################################################################################
 # The RWKV Language Model - https://github.com/BlinkDL/RWKV-LM
 ########################################################################################################
-
+from tqdm import tqdm
 from typing import Optional
 import types, gc, os, time, re
 import torch
@@ -1031,7 +1031,7 @@ class RWKV(MyModule):
 
             x = w['emb.weight'][tokens if seq_mode else tokens[0]]
 
-            for i in range(args.n_layer):
+            for i in tqdm(range(args.n_layer),desc="tensor",leave=False):
                 bbb = f'blocks.{i}.'
                 att = f'blocks.{i}.att.'
                 ffn = f'blocks.{i}.ffn.'
