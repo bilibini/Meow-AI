@@ -1,0 +1,7 @@
+{
+    "name": "wechat",
+    "version": "1.0.0",
+    "description": "微信自动回复",
+    "main": "index.js",
+    "license": "ISC"
+}

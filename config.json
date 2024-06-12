@@ -1,0 +1,11 @@
+{
+    "host": "127.0.0.1",
+    "port": 5000,
+    "modelsFolder": "models",
+    "dataFolder": "data",
+    "configFolder": "config",
+    "outputFolder": "output",
+    "modelFile": "RWKV-4-World-CHNtuned-0.1B-v1-20230617-ctx4096",
+    "configFile": "default.json",
+    "autoOpen": true
+}

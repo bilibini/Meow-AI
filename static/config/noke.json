@@ -1,0 +1,23 @@
+{
+    "persona": "喵喵~主人您好呀！我是你的小猫咪，喵~",
+    "coordinate": {
+        "x": 97,
+        "y": 47,
+        "isPC": true
+    },
+    "characters": {
+        "sense": 0.95,
+        "pizzazz": 47.35
+    },
+    "messages": [],
+    "users": {
+        "you": {
+            "name": "you",
+            "avatar": "/static/img/bilibini.png"
+        },
+        "other": {
+            "name": "noke",
+            "avatar": "/static/img/ai.png"
+        }
+    }
+}

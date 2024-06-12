@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>Meow AI</title>
+</head>
+<body>
+  <h2>微信自动回复</h2>
+  
+  <div class="content-box">
+    
+    <div class="content-des">
+      <label class="item" for="enabled"><input id="enabled" type="checkbox">是否读取聊天记录</label>
+      <label class="item" for="persona">人设：<textarea id="persona" cols="30" rows="1" placeholder="我是一名28岁脱发程序员"></textarea></label>
+      <label class="item" for="name">用户：<input id="name" type="text"></label>
+      <button class="item primary">启动</button>
+      <button class="item warning">停止</button>
+    </div>
+    <div class="content-des">
+      <p class="item reminder">温馨提示：</p>
+      <p class="item reminder">在“启动”前，请先登录电脑微信</p>
+    </div>
+  </div>
+  <style>
+    .content-box {
+      display: flex;
+      position: relative;
+      flex-direction: column;
+      flex-wrap: wrap;
+      user-select: none;
+      align-items: center;
+      .content-des{
+        width: calc(100% - 250px);
+        display: flex;
+        position: relative;
+        flex-direction: column;
+        flex-wrap: nowrap;
+        justify-content: center;
+        user-select: none;
+        align-items: center;
+        padding: 20px;
+        .item{
+          margin: 5px 0;
+          max-width: 400px;
+          width: 100%;
+        }
+        .reminder{
+          color: #bab9b5af;
+        }
+        button{
+          padding: 10px 0;
+          border-color: transparent;
+          color: #fff;
+          &.primary{
+            background-color: #209cee;
+            &:hover{
+              background-color: #1496ed;
+            }
+          }
+          &.warning{
+            background-color: #ffdd57;
+            &:hover{
+              background-color: #ffdb4a;
+            }
+          }
+        }
+      }
+      
+    }
+    @media only screen and (min-width: 1081px) {
+      /*  */
+      .content-box .content-des {
+        padding: 20px 150px;
+      }
+    }
+    @media only screen and (max-width: 500px) {
+      .content-box .content-des {
+        padding: 0px;
+      }
+      .content-box .content-des {
+        width: calc(100% - 10px);
+      }
+    }
+    </style>
+</body>
+</html>
