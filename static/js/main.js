@@ -209,13 +209,9 @@ const app = Vue.createApp({
                 "messages": this.messages,
                 "users": this.users,
             }
-<<<<<<< HEAD
+
             let file = new File([JSON.stringify(config)], 'meowAI.json', { type: 'text/plain' });
             this.$refs.downloadConfig.download = 'meowAI.json';
-=======
-            let file = new File([JSON.stringify(config)], 'test.json', { type: 'text/plain' });
-            this.$refs.downloadConfig.download = 'test.json';
->>>>>>> fdc3fda3efed27d5730780e24fe998a54c30b6b3
             this.$refs.downloadConfig.href = URL.createObjectURL(file);
             this.$refs.downloadConfig.click();
         },

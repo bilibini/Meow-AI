@@ -49,8 +49,10 @@
 
 ## 演示效果
 ### 1. 持续对话
+### 1. 持续对话
 该演示环境为CPU+28G运行内存，使用'rwkv-5-world-1b5'模型  
 ![image](https://picshack.net/ib/7c1jDPPjHO.gif)
+### 2. 手动调整对话
 ### 2. 手动调整对话
 该演示环境为CPU+28G运行内存，使用'rwkv-5-world-1b5'模型  
 ~注：手动添加修改更多的自己预设的对话，对后续的实现自己想要的聊天效果有很大帮助~  
@@ -67,6 +69,8 @@
 1. 实现本地一键 懒人包，不用配置环境一键启动即可运行
 2. 实现微信对话聊天，感觉应该会是不错的功能  
 3. 待续……    
+3. 待续……    
 
 ## Star History
+[![Star History Chart](https://api.star-history.com/svg?repos=bilibini/Meow-AI&type=Date)](https://star-history.com/#bilibini/Meow-AI&Date)
 [![Star History Chart](https://api.star-history.com/svg?repos=bilibini/Meow-AI&type=Date)](https://star-history.com/#bilibini/Meow-AI&Date)
