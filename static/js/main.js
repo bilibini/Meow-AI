@@ -48,7 +48,15 @@ const app = Vue.createApp({
                 this.showStopButton = false;
             }
         });
-
+        this.socket.on('emit', (data) => {
+            data=JSON.parse(data)
+            new NoticeJs({
+                type: data.code==0?'success':'error',
+                text: data.msg,
+                timeout:45,
+                position: 'topLeft',
+            }).show();
+        });
 
     },
     computed: {
@@ -198,6 +206,12 @@ const app = Vue.createApp({
                 reader.readAsDataURL(file); // 开始读取图片文件并转换成Base64格式
             } else {
                 console.error("无效的图片文件");
+                new NoticeJs({
+                    type: 'error',
+                    text: "无效的图片文件",
+                    timeout:45,
+                    position: 'topLeft',
+                }).show();
             }
         },
         clickDownloadConfig() {
@@ -231,8 +245,20 @@ const app = Vue.createApp({
                     thisf.showMoreSetup = -1;
                 };
                 reader.readAsText(file); // 开始读取配置文件
+                new NoticeJs({
+                    type: 'success',
+                    text: "读取成功",
+                    timeout:10,
+                    position: 'topLeft',
+                }).show();
             } else {
                 console.error("无效的配置文件");
+                new NoticeJs({
+                    type: 'error',
+                    text: "无效的配置文件",
+                    timeout:45,
+                    position: 'topLeft',
+                }).show();
             }
         },
         clickUploadConfig() {

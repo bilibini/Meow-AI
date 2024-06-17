@@ -32,7 +32,7 @@ class WeChatServer():
         self.app.route('/stop')
         def stop():
             self.stop_event.set()
-            return json.dumps({'code': 0, 'msg': '停止成功'})
+            return json.dumps({'code': 0, 'msg': '微信自动对话停止成功'})
         
         self.meowAPP.register_blueprint(self.app)
         self.index=index
