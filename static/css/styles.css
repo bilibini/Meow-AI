@@ -10,8 +10,8 @@ body,* {
     display: flex;
     align-items: stretch;
     height: 100vh;
+    width: 100%;
 }
-
 
 
 #chat-container {
@@ -21,6 +21,7 @@ body,* {
     display: flex;
     flex-direction: column;
     height: 100%;
+    width: 100%;
 }
 
 #chat-header {
@@ -37,6 +38,7 @@ body,* {
     flex: 1;
     overflow: hidden;
     max-height: 100%;
+    max-width: 100%;
     overflow-y: scroll;
 }
 
@@ -82,36 +84,43 @@ body,* {
     flex-direction: column;
     align-items: flex-start;
     position: relative;
-}
-
-.message .user {
-    font-weight: bold;
-    margin-right: 5px;
-}
-
-.message .avatar{
-    width: 40px;
-    position: absolute;
-    top: 23px;
-    border-radius: 5px;
-}
-
-.message .content {
-    padding: 10px;
-    border-radius: 10px;
-    position: relative;
-    left: 45px;
-    max-width: calc(100% - 45px);
-}
-
-.message.you .content {
-    background-color: #ffcc80;
-    /* background-color:transparent; */
-}
-
-.message.other .content {
-    background-color: #7be383;
-    /* background-color:transparent; */
+    width: 100%;
+    .user {
+        font-weight: bold;
+        margin-right: 5px;
+    }
+    .avatar {
+        width: 40px;
+        position: absolute;
+        top: 23px;
+        border-radius: 5px;
+    }
+    .content {
+        padding: 10px;
+        border-radius: 10px;
+        position: relative;
+        left: 45px;
+        max-width: calc(100% - 45px);
+        word-wrap: break-word;
+    }
+    &.you {
+        .content {
+            background-color: #ffcc80;
+            /* background-color:transparent; */
+        }
+        .edit-mode textarea{
+            background-color: #ffcc80;
+        }
+    }
+    &.other {
+        .content {
+            background-color: #7be383;
+            /* background-color:transparent; */
+        }
+        .edit-mode textarea{
+            background-color: #7be383;
+        }
+    }
 }
 
 .context-menu {
@@ -186,12 +195,6 @@ body,* {
     border:none;
     text-decoration: none;
 
-}
-.message.other .edit-mode textarea{
-    background-color: #7be383;
-}
-.message.you .edit-mode textarea{
-    background-color: #ffcc80;
 }
 #message-input {
     width: auto;
