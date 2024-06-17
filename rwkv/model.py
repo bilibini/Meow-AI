@@ -1028,7 +1028,7 @@ class RWKV(MyModule):
                         state[i*3+2] = torch.zeros(args.n_embd, dtype=atype, requires_grad=False, device=dev).contiguous()
 
             seq_mode = len(tokens) > 1
-
+            
             x = w['emb.weight'][tokens if seq_mode else tokens[0]]
 
             for i in tqdm(range(args.n_layer),desc="tensor",leave=False):

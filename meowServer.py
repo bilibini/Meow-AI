@@ -1,7 +1,7 @@
-import re
+import re,json,torch
 from tqdm import tqdm
 from rwkv.utils import PIPELINE, PIPELINE_ARGS
-from typing import List,Dict,Mapping,Union,Callable,Any
+from typing import List,Dict,Mapping,Union,Callable,Any,Tuple
 
 class Character(PIPELINE_ARGS):
     def __init__(self,persona:str='主人你好呀！我是你的可爱猫娘，喵~', temperature:float=1.1,top_p:float=0.7, top_k:float=0, alpha_frequency:float=0.2, alpha_presence:float=0.2, alpha_decay:float=0.996, token_ban:list=[], token_stop:list=[], chunk_len=256):
@@ -21,7 +21,7 @@ class MeowAI:
     def purr(self,txt:str)->str:
         return re.sub(r'\r*\n{2,}', '\n', txt.strip())
 
-    def chat(self,message:Mapping[str,Union[str,List[Dict[str,str]]]],prev_state:bool=False,callback:Callable[[str],Any]=None)->str:
+    def chat(self,message:Mapping[str,Union[str,List[Dict[str,str]]]],prev_state:torch.Tensor=None,callback:Callable[[str],Any]=None)->Tuple[str,torch.Tensor]:
         '''
         message={
             "Answerer": "Assistant",
@@ -45,7 +45,7 @@ class MeowAI:
         out_len = 0
         out_str = ""
         occurrence = {}
-        state = self.chat_state if prev_state else None
+        state = prev_state
         input_text = "\n\n".join([f"{text['role']}: {self.purr(text['content'])}" for text in message['messages']])
         input_text = f"{message['Answerer']}: {self.purr(self.character.persona)}\n\n"+input_text+f"\n\n{message['Answerer']}:"
         for i in tqdm(range(self.max_tokens),desc=f"tokens",leave=False):
@@ -69,21 +69,21 @@ class MeowAI:
 
             tmp = self.model.decode(out_tokens[out_len:])
             out_str += tmp
-            self.prev_state=state
+            # self.chat_state=state
             if ("\ufffd" not in tmp) and ( not tmp.endswith("\n") ):
                 out_len = i + 1
             elif "\n\n" in tmp:
                 break
             if callback and not self.stop: callback(tmp)
         print(out_str.strip())
-        return out_str.strip()
+        return out_str.strip(),state
     
-    def talk(self,input_text:str,prev_state:bool=False,callback:Callable[[str],Any]=None)->str:
+    def talk(self,input_text:str,prev_state:torch.Tensor=None,callback:Callable[[str],Any]=None)->Tuple[str,torch.Tensor]:
         out_tokens = []
         out_len = 0
         out_str = ""
         occurrence = {}
-        state = self.chat_state if prev_state else None
+        state = prev_state
         for i in tqdm(range(self.max_tokens),desc=f"tokens",leave=False):
             if i == 0:
                 out, state = self.model.model.forward(self.model.encode(input_text), state)
@@ -103,17 +103,17 @@ class MeowAI:
 
             tmp = self.model.decode(out_tokens[out_len:])
             out_str += tmp
-            self.prev_state=state
+            # self.talk_state=state
             if callback: callback(tmp)
             out_len = i + 1
             if self.stop:break
         print(out_str)
-        return out_str
+        return out_str,state
     
 from flask import Flask, render_template
 from flask_socketio import SocketIO
 import webbrowser
-# from extensions import register_extensions
+from extensions import register_extensions
 
 class MeowAIServer():
     def __init__(self, meowAI:MeowAI, host:str="0.0.0.0", port:int=5000, debug:bool=False,use_reloader:bool=False,autoOpen:bool=True):
@@ -129,7 +129,7 @@ class MeowAIServer():
         self.app.jinja_env.variable_start_string = '{['
         self.app.jinja_env.variable_end_string = ']}'
         self.socketio = SocketIO(self.app)
-        # register_extensions(self.app)
+        register_extensions(self.app,self.socketio,self.meowAI)
 
         @self.app.route('/')
         def index():
@@ -138,6 +138,13 @@ class MeowAIServer():
         @self.app.route('/extensions/')
         def extension():
             return render_template('extension.html')
+
+        @self.socketio.on('emit')
+        def emit(news:Dict[str,Union[int,float]]):
+            '''
+            news={'code':1,'msg':'XX错误'}
+            '''
+            self.socketio.emit('emit', json.dumps(news))
 
         @self.socketio.on('stop')
         def stop(status:bool=True):
@@ -151,16 +158,19 @@ class MeowAIServer():
             
         @self.socketio.on('chat')
         def handle_chat(message:Mapping[str,Union[str,List[Dict[str,str]]]]):
-            self.meowAI.stop=False
-            self.meowAI.chat(message,True,lambda x:self.socketio.emit('chat',x))
-            stop(True)
+            try:
+                self.meowAI.stop=False
+                self.meowAI.chat(message,None,lambda x:self.socketio.emit('chat',x[0]))
+            finally:
+                stop(True)
         
         @self.socketio.on('talk')
         def handle_talk(prompt):
-            self.meowAI.stop=False
-            self.meowAI.talk(prompt,False,lambda x:self.socketio.emit('talk',x))
-            stop(True)
-
+            try:
+                self.meowAI.stop=False
+                self.meowAI.talk(prompt,None,lambda x:self.socketio.emit('talk',x[0]))
+            finally:
+                stop(True)
 
     def run(self):
         if self.autoOpen:webbrowser.open(f'http://{self.host}:{self.port}')
