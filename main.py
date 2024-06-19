@@ -8,7 +8,7 @@ from pathlib import Path
 os.environ['RWKV_JIT_ON'] = '1'
 os.environ["RWKV_CUDA_ON"] = '0'
 
-is_available='cuda fp16' if torch.cuda.is_available() else 'cpu fp32'
+is_available='cuda fp32' if torch.cuda.is_available() else 'cpu fp32'
 config=None
 modelsFolder=""
 modelFile=""

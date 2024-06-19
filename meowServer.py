@@ -21,33 +21,33 @@ class MeowAI:
     def purr(self,txt:str)->str:
         return re.sub(r'\r*\n{2,}', '\n', txt.strip())
 
-    def chat(self,message:Mapping[str,Union[str,List[Dict[str,str]]]],prev_state:torch.Tensor=None,callback:Callable[[str],Any]=None)->Tuple[str,torch.Tensor]:
+    def chat(self,messages:List[Mapping[str,str]],prev_state:torch.Tensor=None,callback:Callable[[str],Any]=None)->Tuple[str,torch.Tensor]:
         '''
-        message={
-            "Answerer": "Assistant",
-            "messages": [
-                {
-                    "role": "User",
-                    "content": "What is the meaning of life?"
-                },
-                {
-                    "role": "Assistant",
-                    "content": "The meaning of life is to live a happy and fulfilling life."
-                },
-                {
-                    "role": "User",
-                    "content": "How do cats call?"
-                },
-            ]
-        }
+        messages=[
+            {
+                "role": "User",
+                "content": "What is the meaning of life?"
+            },
+            {
+                "role": "Assistant",
+                "content": "The meaning of life is to live a happy and fulfilling life."
+            },
+            {
+                "role": "User",
+                "content": "How do cats call?"
+            },
+        ]
         '''
         out_tokens = []
         out_len = 0
         out_str = ""
         occurrence = {}
         state = prev_state
-        input_text = "\n\n".join([f"{text['role']}: {self.purr(text['content'])}" for text in message['messages']])
-        input_text = f"{message['Answerer']}: {self.purr(self.character.persona)}\n\n"+input_text+f"\n\n{message['Answerer']}:"
+        input_text = "\n\n".join([f"{text['role']}:{self.purr(text['content'])}" for text in messages])
+        if state:
+            input_text = f"\n\n{input_text}\n\nAnswerer:"
+        else:
+            input_text = f"Answerer:{self.purr(self.character.persona)}\n\n{input_text}\n\nAnswerer:"
         for i in tqdm(range(self.max_tokens),desc=f"tokens",leave=False):
             if self.stop:break
             if i == 0:
