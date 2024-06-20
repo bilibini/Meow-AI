@@ -47,7 +47,7 @@
       flex-wrap: wrap;
       justify-content: flex-start;
       user-select: none;
-      padding: 20px 20px 50px;
+      padding-bottom:50px;
 
       .folder {
         position: relative;
@@ -119,9 +119,14 @@
       padding: 20px 150px;
     }
   }
-  @media only screen and (max-width: 500px) {
+  @media only screen and (max-width: 680px) {
+    .content-box .folder-box .folder {
+      width: calc(50% - 25px);
+    }
+  }
+  @media only screen and (max-width: 460px) {
     .content-box .folder-box {
-      padding: 20px 40px;
+      padding: 0px;
     }
     .content-box .folder-box .folder {
       width: calc(100% - 10px);

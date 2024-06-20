@@ -135,7 +135,7 @@ class MeowAIServer():
         def index():
             return render_template('index.html')
 
-        @self.app.route('/extensions/')
+        @self.app.route('/extension/')
         def extension():
             return render_template('extension.html')
 

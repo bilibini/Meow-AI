@@ -132,6 +132,10 @@ const app = Vue.createApp({
             const messagesContainer = document.getElementById('chat-messages');
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         },
+        openExtension() {
+            //打开扩展
+            window.open('/extension','_blank')
+        },
         stopReply() {
             //停止对话
             this.socket.emit('stop', true);
