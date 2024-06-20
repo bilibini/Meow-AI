@@ -113,7 +113,7 @@ class MeowAI:
 from flask import Flask, render_template
 from flask_socketio import SocketIO
 import webbrowser
-from extensions import register_extensions
+from extensions import load_extensions
 
 class MeowAIServer():
     def __init__(self, meowAI:MeowAI, host:str="0.0.0.0", port:int=5000, debug:bool=False,use_reloader:bool=False,autoOpen:bool=True):
@@ -129,7 +129,7 @@ class MeowAIServer():
         self.app.jinja_env.variable_start_string = '{['
         self.app.jinja_env.variable_end_string = ']}'
         self.socketio = SocketIO(self.app)
-        register_extensions(self.app,self.socketio,self.meowAI)
+        load_extensions(self.app,self.socketio,self.meowAI)
 
         @self.app.route('/')
         def index():

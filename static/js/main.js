@@ -61,18 +61,14 @@ const app = Vue.createApp({
     },
     computed: {
         messagesInfo() {
-            const messagesInfo = {
-                "Answerer": "Assistant",
-                "messages": []
-            };
+            messages=[];
             for (let message of this.messages) {
-                messagesInfo.messages.push({
+                messages.push({
                     "role": message.type=='you'?"User":"Assistant",
                     "content": message.content,
                 })
             }
-
-            return messagesInfo;
+            return messages;
         },
         characters() {
             if (!this.coordinate) {
