@@ -24,6 +24,7 @@ const app = Vue.createApp({
             showMoreSetup: -1,
             contextMenuIndex: -1,
             contextMenuPosition: { x: 0, y: 0 },
+            extensionSRC:"/extension/",
         };
     },
     mounted() {
@@ -57,7 +58,11 @@ const app = Vue.createApp({
                 position: 'topLeft',
             }).show();
         });
-
+        let that=this;
+        window.addEventListener('message', function(event) {
+            console.log(that.extensionSRC);
+            that.extensionSRC=event.data;
+        });
     },
     computed: {
         messagesInfo() {
@@ -138,6 +143,7 @@ const app = Vue.createApp({
         },
         resetReply() {
             //重新对话
+            console.log(this.extensionSRC)
             this.showStopButton = true;
             this.messages.pop();
             this.socket.emit('chat', this.messagesInfo);

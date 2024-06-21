@@ -12,7 +12,7 @@ class WeChatServer():
         self.meowAPP=meowAPP
         self.meowSIO=meowSIO
         self.stop_event = Event()
-        self.app = Blueprint('wechat', __name__,static_folder='static',template_folder='templates',url_prefix='/wechat')
+        self.app = Blueprint('wechat', __name__,static_folder='static',template_folder='templates',url_prefix='/extension/wechat')
         self.wx=None
         self.prev_state=None
         self.chats=[]
@@ -35,6 +35,12 @@ class WeChatServer():
             self.stop_event.set()
             self.prev_state=None
             return json.dumps({'code': 0, 'msg': '微信自动对话停止成功'})
+        @self.app.route('/status',methods=['POST','GET'])
+        def status():
+            if self.wx:
+                return json.dumps({'code': 1, 'msg': '已开始'})
+            else:
+                return json.dumps({'code': 0, 'msg': '未开始'})
         
         self.meowAPP.register_blueprint(self.app)
         self.index=index

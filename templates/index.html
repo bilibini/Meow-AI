@@ -6,7 +6,7 @@
     <title>Meow-AI</title>
     <link rel="stylesheet" href="{[ url_for('static', filename='css/styles.css') ]}">
     <link rel="stylesheet" href="{[ url_for('static', filename='css/noticejs.css') ]}">
-    <link rel="stylesheet" href="{[ url_for('static', filename='css/all.min.css') ]}">
+    <link rel="stylesheet" href="{[ url_for('static', filename='css/font-awesome.min.css') ]}">
     <!-- <link rel="shortcut icon" type="image/x-icon" href="{[ url_for('static', filename='logo.png') ]}"> -->
 </head>
 <body>
@@ -38,9 +38,9 @@
             <button @click="sendMessage" id="send-button" :class="{ 'disabled': showStopButton}">发送</button>
         </div>
         <div class="status-button">
-            <button @click="showMoreSetup=3" class=""  id="start-button"><i class="fa fa-puzzle-piece"></i></button>
+            <button @click="extensionSRC='/extension/';showMoreSetup=3" class=""  id="start-button"><i class="fa fa-puzzle-piece"></i></button>
             <button @click="stopReply" class="" v-show="showStopButton" id="stop-button"><i class="fa fa-stop"></i></button>
-            <button @click="resetReply" class="" v-show="!showStopButton" id="reset-button"><i class="fa fa-redo-alt"></i></button>
+            <button @click="resetReply" class="" v-show="!showStopButton" id="reset-button"><i class="fa fa-refresh"></i></button>
         </div>
         <div id="more-container" v-show="showMoreSetup!=-1"  @mouseup="isDragging = false">
             <div class="bg" @click="showMoreSetup=-1"></div>
@@ -83,11 +83,11 @@
                         <p class="mark">为了防止回复出现混乱情况发生，建议开启！</p>
                         <p v-if="false">越偏向左边，回复越严谨，反之越活泼</p>
                         <p v-if="false">越偏向上边，回复越理性，反之越感性</p>
-                        
                     </div>
                 </div>
-                <div class="pop-extensions"  v-show="showMoreSetup==3">
-                    <iframe src="/extension/" width="100%" frameborder="0"></iframe>
+                <div class="pop-extension"  v-show="showMoreSetup==3">
+                    <a href="#" v-show="extensionSRC!='/extension/'" @click="extensionSRC='/extension/'" class="back"><i class="fa fa-chevron-left" ></i></a>
+                    <iframe :src="extensionSRC" width="100%" frameborder="0"></iframe>
                 </div>
             </div>
         </div>

@@ -9,7 +9,10 @@ class Character(PIPELINE_ARGS):
         self.persona=persona
 
 
-class MeowAI:
+class MeowAI():
+    '''
+    内容生成
+    '''
     def __init__(self,model:PIPELINE, character:Character=Character(),max_tokens:int=2048 ):
         self.model=model
         self.character=character
@@ -129,7 +132,7 @@ class MeowAIServer():
         self.app.jinja_env.variable_start_string = '{['
         self.app.jinja_env.variable_end_string = ']}'
         self.socketio = SocketIO(self.app)
-        load_extensions(self.app,self.socketio,self.meowAI)
+        print(load_extensions(self.app,self.socketio,self.meowAI))
 
         @self.app.route('/')
         def index():
@@ -138,7 +141,7 @@ class MeowAIServer():
         @self.app.route('/extension/')
         def extension():
             return render_template('extension.html')
-
+        
         @self.socketio.on('emit')
         def emit(news:Dict[str,Union[int,float]]):
             '''

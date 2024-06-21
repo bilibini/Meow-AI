@@ -5,119 +5,6 @@
   <title>微信自动回复_MeowAI</title>
   <link rel="shortcut icon" type="image/png" href="./static/logo.png">
   <link rel="stylesheet" href="/static/css/noticejs.css">
-</head>
-<body>
-  <div class="content-box" id="app">
-    <h2>微信自动回复</h2>
-    <div class="content-des">
-      <label class="item" for="name">用户：<input id="name" type="text" v-model="name"></label>
-      <label v-if="false" class="item" for="persona">人设：<textarea v-model="persona" id="persona" cols="30" rows="2" placeholder="我是一名28岁喜欢看电视电影、运动健身、热爱生活的知性女"></textarea></label>
-      <label class="item" for="chatHistory"><input id="chatHistory" type="checkbox" v-model="chatHistory">读取聊天记录</label>
-      <button v-show="!state" class="item primary" @click="start">启动</button>
-      <button v-show="state" class="item warning" @click="stop">停止</button>
-    </div>
-    <div class="content-des">
-      <p class="item reminder">温馨提示：</p>
-      <p class="item reminder">在“启动”前，请先登录电脑微信</p>
-    </div>
-  </div>
-  <script src="/static/js/socket.io.min.js"></script>
-  <script src="/static/js/axios.min.js"></script>
-  <script src="/static/js/vue.global.js"></script>
-  <script src="/static/js/notice.js"></script>
-  <script>
-    const app = Vue.createApp({
-      data() {
-        return {
-          name: '',
-          persona: '',
-          chatHistory:false,
-          state: false,
-        }
-      },
-      mounted() {
-        this.socket = io.connect('http://' + document.domain + ':' + location.port);
-        this.socket.on('emit', (data) => {
-            // data=JSON.parse(data)
-            console.log(data)
-            new NoticeJs({
-                type: data.code==0?'success':'error',
-                text: data.msg,
-                timeout:45,
-                position: 'topLeft',
-            }).show();
-        });
-        this.socket.on('wechat_stop', (data) => {
-          this.state = false;
-          new NoticeJs({
-              type: 'error',
-              text: data,
-              timeout:55,
-              position: 'topLeft',
-          }).show();
-        });
-      },
-      methods: {
-        error(errtxt) {
-          new NoticeJs({
-              type: 'error',
-              text: errtxt,
-              timeout:30,
-              position: 'topLeft',
-          }).show();
-        },
-        start() {
-          if (this.name === '') {
-            this.error('请输入用户名')
-            return
-          }
-          if (this.enabled) {
-            this.error('请先停止')
-            return
-          }
-          axios.post('./start', {
-            name: this.name,
-            persona: this.persona,
-            chatHistory: this.chatHistory,
-          }).then(res => {
-            if (res.data.code === 0) {
-              this.state = true
-              new NoticeJs({
-                type: 'success',
-                text: '启动成功',
-                timeout:30,
-              }).show()
-            }
-            else {
-              this.error(res.data.msg)
-            }
-          }).catch(err => {
-            this.error(err)
-          })
-        },
-        stop() {
-          if (!this.state) {
-            this.error('请先启动')
-            return
-          }
-          axios.post('./stop').then(res => {
-            if (res.data.code === 0) {
-              this.state = false
-              new NoticeJs({
-                type: 'success',
-                text: '停止成功',
-                timeout:30,
-              }).show()
-            }
-          }).catch(err => {
-            this.error(err)
-          })
-        }
-        
-      }
-    })
-    app.mount('#app')
-  </script>
   <style>
     .content-box {
       display: flex;
@@ -135,7 +22,7 @@
         justify-content: center;
         user-select: none;
         align-items: center;
-        padding: 20px;
+        padding: 20px 0;
         .item{
           margin: 5px 0;
           max-width: 400px;
@@ -167,7 +54,7 @@
     @media only screen and (min-width: 1081px) {
       /*  */
       .content-box .content-des {
-        padding: 20px 150px;
+        padding: 20px 120px;
       }
     }
     @media only screen and (max-width: 500px) {
@@ -178,6 +65,110 @@
         width: calc(100% - 10px);
       }
     }
-    </style>
+  </style>
+</head>
+<body>
+  <div class="content-box" id="app">
+    <h2>微信自动回复</h2>
+    <div class="content-des" v-cloak>
+      <label class="item" for="name">用户：<input id="name" type="text" v-model="name"></label>
+      <label v-if="false" class="item" for="persona">人设：<textarea v-model="persona" id="persona" cols="30" rows="2" placeholder="我是一名28岁喜欢看电视电影、运动健身、热爱生活的知性女"></textarea></label>
+      <label class="item" for="chatHistory"><input id="chatHistory" type="checkbox" v-model="chatHistory">读取聊天记录</label>
+      <button v-show="!state" class="item primary" @click="start">启动</button>
+      <button v-show="state" class="item warning" @click="stop">停止</button>
+    </div>
+    <div class="content-des">
+      <p class="item reminder">温馨提示：</p>
+      <p class="item reminder">在“启动”前，请先登录电脑微信</p>
+    </div>
+  </div>
+  <script src="/static/js/socket.io.min.js"></script>
+  <script src="/static/js/axios.min.js"></script>
+  <script src="/static/js/vue.global.js"></script>
+  <script src="/static/js/notice.js"></script>
+  <script>
+    const app = Vue.createApp({
+      data() {
+        return {
+          name: '',
+          persona: '',
+          chatHistory:false,
+          state: false,
+        }
+      },
+      mounted() {
+        this.socket = io.connect('http://' + document.domain + ':' + location.port);
+        this.socket.on('emit', (data) => {
+            // data=JSON.parse(data)
+            console.log(data)
+            this.notice(data.code,data.msg)
+        });
+        this.socket.on('wechat_stop', (data) => {
+          this.state = false;
+          this.notice(false,data)
+        });
+        axios.post('./status').then(res => {
+            if (res.data.code === 0) {
+              this.state = false;
+            }else if(res.data.code === 1){
+              this.state = true;
+            }
+          }).catch(err => {
+            this.notice(false,err)
+          })
+      },
+      methods: {
+        notice(type,msgtxt) {
+          new NoticeJs({
+              type: type?'success':'error',
+              text: msgtxt,
+              timeout:30,
+              position: 'topRight',
+          }).show();
+        },
+        start() {
+          if (this.name === '') {
+            this.notice(false,'请输入用户名')
+            return
+          }
+          if (this.enabled) {
+            this.notice(false,'请先停止')
+            return
+          }
+          axios.post('./start', {
+            name: this.name,
+            persona: this.persona,
+            chatHistory: this.chatHistory,
+          }).then(res => {
+            if (res.data.code === 0) {
+              this.state = true;
+              this.notice(true,'启动成功');
+            }
+            else {
+              this.notice(false,res.data.msg);
+            }
+          }).catch(err => {
+            this.notice(false,err)
+          })
+        },
+        stop() {
+          if (!this.state) {
+            this.notice(false,'请先启动');
+            return
+          }
+          axios.post('./stop').then(res => {
+            if (res.data.code === 0) {
+              this.state = false;
+              this.notice(true,'停止成功');
+            }
+          }).catch(err => {
+            this.notice(false,err)
+          })
+        }
+        
+      }
+    })
+    app.mount('#app')
+  </script>
 </body>
 </html>

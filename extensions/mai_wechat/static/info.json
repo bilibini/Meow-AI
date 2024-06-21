@@ -2,5 +2,6 @@
     "name": "wechat",
     "version": "1.0.0",
     "description": "微信自动回复",
-    "main": "index.js"
+    "url": "/extension/wechat",
+    "logo": "logo.png"
 }
