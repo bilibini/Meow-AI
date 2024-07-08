@@ -34,6 +34,7 @@ class WeChatServer():
         def stop():
             self.stop_event.set()
             self.prev_state=None
+            self.wx=None
             return json.dumps({'code': 0, 'msg': '微信自动对话停止成功'})
         @self.app.route('/status',methods=['POST','GET'])
         def status():
@@ -70,6 +71,7 @@ class WeChatServer():
             messages=self.chats
         print(messages)
         reply,self.prev_state=self.meowAI.chat(messages,self.prev_state,lambda x:print(x[0],end=''))
+        reply=reply.replace('\n\n','\n').replace('。','')
         self.chats.append({"role": "Assistant", "content": reply})
         return reply
 
@@ -94,7 +96,7 @@ class WeChatServer():
                     for msg in filter(lambda x:x.type=='friend',msgs):
                         reply=self.reply(msg.content,chat)
                         chat.SendMsg(reply)
-                time.sleep(0.5)
+                time.sleep(0.1)
         except Exception as e:
             self.meowSIO.emit('emit',{'code':1,'msg':'微信监听失败:'+str(e)})
             self.stop_event.set()

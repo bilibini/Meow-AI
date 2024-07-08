@@ -8,14 +8,13 @@ from pathlib import Path
 os.environ['RWKV_JIT_ON'] = '1'
 os.environ["RWKV_CUDA_ON"] = '0'
 
-is_available='cuda fp32' if torch.cuda.is_available() else 'cpu fp32'
 config=None
 modelsFolder=""
 modelFile=""
 rootPath=Path(__file__).parent
 configPath=rootPath.joinpath('config.json')
 
-def getModelsList(modelsFolder:Path)->List[dict[str,str]]:
+def getModelsList(modelsFolder:Path)->List[Dict[str,str]]:
     modelInfoList=[]
     for file in modelsFolder.rglob('*.pth'):
         modelsinfo={
@@ -31,19 +30,19 @@ modelsFolder=Path(config['modelsFolder'])
 if not modelsFolder.exists():raise FileNotFoundError(f"读取models文件夹失败,没有找到models文件夹!\n请在项目根目录下创建models文件夹,并放入模型文件!\n配置文件路径:{modelsFolder}")
 modelFile=modelsFolder.joinpath(config['modelFile'])
 modelInfoList=getModelsList(modelsFolder)
-
+config['strategy']=config['strategy'] if torch.cuda.is_available() else 'cpu fp32'
 
 if not os.path.exists(str(modelFile)+'.pth'):
     if len(modelInfoList)==0:raise FileNotFoundError(f"没有找到模型文件!\n请在项目根目录下创建models文件夹,并放入模型文件!\n配置文件路径:{modelsFolder}")
     print(f"模型文件不存在，请先下载{config['modelFile']}模型\n现将自动使用{modelInfoList[0]['name']}模型")
     modelFile=modelInfoList[0]['path']
     config["modelFile"]=modelInfoList[0]['name']
+with open(configPath, 'w') as file:file.write(json.dumps(config, indent=4))
 
-model = RWKV(model=str(modelFile), strategy=is_available)
+model = RWKV(model=str(modelFile), strategy=config['strategy'])
 pipeline = PIPELINE(model, "rwkv_vocab_v20230424")
-
 meowAI=MeowAI(pipeline)
-meowAIServer=MeowAIServer(meowAI,host=config['host'],port=config['port'],autoOpen=config['autoOpen'],debug=True)
+meowAIServer=MeowAIServer(meowAI,host=config['host'],port=int(config['port']),autoOpen=config['autoOpen'],debug=True)
 
 
 if __name__ == '__main__':

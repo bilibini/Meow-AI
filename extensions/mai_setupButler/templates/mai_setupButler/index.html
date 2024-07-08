@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>设置_MeowAI</title>
+  <link rel="shortcut icon" type="image/png" href="./static/logo.png">
+  <link rel="stylesheet" href="/static/css/noticejs.css">
+  <style>
+    .content-box {
+      display: flex;
+      position: relative;
+      flex-direction: column;
+      flex-wrap: wrap;
+      user-select: none;
+      align-items: center;
+      .content-des{
+        width: calc(100% - 250px);
+        display: flex;
+        position: relative;
+        flex-direction: column;
+        flex-wrap: nowrap;
+        justify-content: center;
+        user-select: none;
+        align-items: center;
+        padding: 20px 0;
+        .item{
+          margin: 5px 0;
+          max-width: 400px;
+          width: 100%;
+        }
+        .reminder{
+          color: #bab9b5af;
+        }
+        button{
+          padding: 10px 0;
+          border-color: transparent;
+          color: #fff;
+          &.primary{
+            background-color: #209cee;
+            &:hover{
+              background-color: #1496ed;
+            }
+          }
+          &.warning{
+            background-color: #ffdd57;
+            &:hover{
+              background-color: #ffdb4a;
+            }
+          }
+        }
+      }
+      
+    }
+    @media only screen and (min-width: 1081px) {
+      /*  */
+      .content-box .content-des {
+        padding: 20px 120px;
+      }
+    }
+    @media only screen and (max-width: 500px) {
+      .content-box .content-des {
+        padding: 0px;
+      }
+      .content-box .content-des {
+        width: calc(100% - 10px);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="content-box" id="app">
+    <h2>设置</h2>
+    <div class="content-des" v-cloak>
+      <label class="item" for="model">
+        模型选择:
+        <select id="model" v-model="model"  style="width: 300px;">
+          <option v-for="Amodel in modelList" :key="Amodel.path" :value="Amodel.path">{{Amodel.name}}</option>
+        </select>
+      </label>
+      <label class="item" for="strategy">
+        加载方式:
+        <select id="strategy" v-model="strategy" style="width: 300px;">
+          <option value="cpu fp32">cpu fp32:纯CPU跑ai</option>
+          <option value="cpu bf16">cpu bf16:仅新intel(例如Xeon Platinum)支持</option>
+          <option value="cpu fp32i8">cpu fp32i8:比cpu fp32慢,但是省内存</option>
+          <option value="cuda fp32">cuda fp32:占大量显存,效果好</option>
+          <option value="cuda fp16">cuda fp16:省显存,比cuda fp32速度快</option>
+          <option value="cuda fp16i8">cuda fp16i8:比cuda fp16省显存</option>
+          <option value="cuda fp16i8*20+">cuda fp16i8*20+:比cuda fp16i8省显存,需要更多内存</option>
+        </select>
+      </label>
+    </div>
+    <div class="content-des" v-cloak>
+      <label>网址：<input id="host" type="text" v-model="host" style="width: 200px">端口：<input id="port" type="text" v-model="port" style="width:70px"></label>
+      <label class="item" for="autoOpen"><input id="autoOpen" type="checkbox" v-model="autoOpen">启动时自动打开</label>
+      <button v-show="status" class="item primary" @click="setup">保存设置</button>
+      <button v-show="!status" class="item warning" >模型载入中……</button>
+    </div>
+
+  </div>
+  <script src="/static/js/socket.io.min.js"></script>
+  <script src="/static/js/axios.min.js"></script>
+  <script src="/static/js/vue.global.js"></script>
+  <script src="/static/js/notice.js"></script>
+  <script>
+    const app = Vue.createApp({
+      data() {
+        return {
+          host: '',
+          port: '',
+          model:'',
+          strategy: '',
+          autoOpen:true,
+          modelList:[],
+          status:true
+        }
+      },
+      mounted() {
+        this.socket = io.connect('http://' + document.domain + ':' + location.port);
+        this.socket.on('emit', (data) => {
+            // data=JSON.parse(data)
+            console.log(data)
+            this.notice(data.code,data.msg)
+        });
+        axios.get('./config.json').then(res => {
+          data=res.data
+
+          this.host=data.host
+          this.port=parseInt(data.port)
+          this.modelList=data.modelList
+          this.model=data.model
+          this.strategy=data.strategy
+          this.autoOpen=data.autoOpen
+
+        }).catch(err => {
+          this.notice(false,err)
+        })
+      },
+      methods: {
+        notice(type,msgtxt) {
+          new NoticeJs({
+              type: type?'success':'error',
+              text: msgtxt,
+              timeout:30,
+              position: 'bottomRight',
+          }).show();
+        },
+        setup() {
+          if (this.host === '' || this.port === '') {
+            this.notice(false,'请输入网址和端口')
+            return
+          }
+          this.status=false
+          axios.post('./setup', {
+            host:this.host,
+            port:this.port,
+            model:this.model,
+            strategy:this.strategy,
+            autoOpen:this.autoOpen
+          }).then(res => {
+            if (res.data.code === 0) {
+              this.state = true;
+              this.notice(true,res.data.msg);
+            }
+            else {
+              this.notice(false,res.data.msg);
+            }
+            this.status=true
+          }).catch(err => {
+            this.notice(false,err)
+            this.status=true
+          })
+        },
+        
+      }
+    })
+    app.mount('#app')
+  </script>
+</body>
+</html>
