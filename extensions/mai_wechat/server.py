@@ -1,5 +1,4 @@
 from .wxauto import WeChat,elements
-from .install import init
 from flask import Flask,Blueprint,render_template,request
 from flask_socketio import SocketIO
 from threading import Thread, Event
@@ -106,5 +105,4 @@ class WeChatServer():
 
 
 def main(meowAPP:Flask,meowSIO:SocketIO,meowAI:MA):
-    init()
     WeChatServer(meowAPP,meowSIO,meowAI)
