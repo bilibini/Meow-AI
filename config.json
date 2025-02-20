@@ -4,7 +4,7 @@
     "modelsFolder": "models",
     "dataFolder": "data",
     "outputFolder": "output",
-    "modelFile": "RWKV-4-World-CHNtuned-0.1B-v1-20230617-ctx4096",
+    "modelFile": "RWKV-x070-World-0.1B-v2.8-20241210-ctx4096",
     "strategy": "cuda fp32",
     "configFile": "default.json",
     "autoOpen": true

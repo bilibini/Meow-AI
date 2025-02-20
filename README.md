@@ -12,7 +12,7 @@
 
 ## 运行设置
 根据自己电脑配置在模型网站（[https://huggingface.co/BlinkDL](https://huggingface.co/BlinkDL)）下载合适的模型 （[镜像网址](https://hf-mirror.com/BlinkDL)） 
-下载的所有文件放在models文件夹内，并修改config.json中的“modelFile”，将'RWKV-x060-World-1B6-v2-20240208-ctx4096'修改为自己下载的模型名  
+下载的所有文件放在models文件夹内，并修改config.json中的“modelFile”，将'RWKV-x070-World-0.1B-v2.8-20241210-ctx4096'修改为自己下载的模型名  
 运行main.py，在浏览器中打开http://172.0.0.1:5000 即可开始对话  
 
 ## 功能更新
@@ -22,7 +22,8 @@
 - 2024-03-01：完全使用RWKV架构，实现更小的模型体积，降低运行内存和CPU占用
 - 2024-04-26：优化整体架构
 - 2024-07-08：支持扩展功能，支持微信自动聊天  
-- 2024-07-21：完成一键懒人运行包  
+- 2024-07-21：完成一键运行包  
+- 2025-02-20：支持RWKV7模型
 
 ## 演示效果
 ### 1. 持续对话
@@ -41,7 +42,7 @@
 支持添加自定义扩展功能，目前已完成“微信自动聊天”  
 点击启动后，将自动打开微信，自动回复聊天  
 ![image](https://t3.picb.cc/2024/07/08/iQfcbG.gif)
-### 6. 一键懒人运行包
+### 6. 一键运行包
 无需手动配置环境,运行包里含了所有所需环境，只需双击运行即可 
 （由于运行包大小过大，请在[releases](https://github.com/bilibini/Meow-AI/releases)下载）   
 ![image](https://img.z4a.net/images/2024/07/21/_.png)  

@@ -165,7 +165,9 @@ class MeowAIServer():
                 self.meowAI.stop=False
                 self.meowAI.chat(message,None,lambda x:self.socketio.emit('chat',x[0]))
             except Exception as e:
-                emit({'code':1,'msg':f'生成错误Error:{e}'})
+                ext={'code':1,'msg':f'生成错误Error:{e}'}
+                emit(ext)
+                print(ext)
             finally:
                 stop(True)
         
@@ -175,7 +177,9 @@ class MeowAIServer():
                 self.meowAI.stop=False
                 self.meowAI.talk(prompt,None,lambda x:self.socketio.emit('talk',x[0]))
             except Exception as e:
-                emit({'code':1,'msg':f'生成错误Error:{e}'})
+                ext={'code':1,'msg':f'生成错误Error:{e}'}
+                emit(ext)
+                print(ext)
             finally:
                 stop(True)
 

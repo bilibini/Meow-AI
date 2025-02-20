@@ -1,6 +1,7 @@
 from flask import Flask,json
 from flask_socketio import SocketIO
 from meowServer import MeowAI as MA
+from typing import List,Dict,Mapping,Union,Callable,Any
 from pathlib import Path
 from importlib.metadata import version
 import packaging.version as pv
@@ -36,7 +37,7 @@ def install_requirements(requirements:Path):
             else:
                 print(f'{line} is already installed')
 
-def load_extensions(meowAPP:Flask,meowSIO:SocketIO,meowAI:MA)->list[Path]:
+def load_extensions(meowAPP:Flask,meowSIO:SocketIO,meowAI:MA)->List[Path]:
     extensions_path = Path(__file__).parent
     extension_dirs = [extension_dir for extension_dir in extensions_path.iterdir() if (extension_dir / '__init__.py').exists()]
     print(extension_dirs)

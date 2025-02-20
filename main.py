@@ -40,6 +40,12 @@ if not os.path.exists(str(modelFile)+'.pth'):
 with open(configPath, 'w') as file:file.write(json.dumps(config, indent=4))
 
 model = RWKV(model=str(modelFile), strategy=config['strategy'])
+if model.version == 7:
+    import sys
+    sys.modules.pop("rwkv.model")
+    os.environ["RWKV_V7_ON"] = "1"
+    from rwkv.model import RWKV
+    model = RWKV(model=str(modelFile), strategy=config['strategy'])
 pipeline = PIPELINE(model, "rwkv_vocab_v20230424")
 meowAI=MeowAI(pipeline)
 meowAIServer=MeowAIServer(meowAI,host=config['host'],port=int(config['port']),autoOpen=config['autoOpen'],debug=True)
